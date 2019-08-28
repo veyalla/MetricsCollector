@@ -54,12 +54,22 @@ namespace MetricsCollector
             var configuration = await GetConfiguration(ioTHubModuleClient);
             Console.WriteLine($"Obtained configuration: {configuration}");
 
+
+            string wId = "";
+            string wKey = "";
+            string clName = "";
+            if (configuration.SyncMethod == SyncMethod.RestAPI) {
+                wId = Environment.GetEnvironmentVariable("AzMonWorkspaceId") ?? throw new Exception("AzMonWorkspaceId env var not set!");
+                wKey = Environment.GetEnvironmentVariable("AzMonWorkspaceKey") ?? throw new Exception("AzMonWorkspaceKey env var not set!");
+                clName = Environment.GetEnvironmentVariable("AzMonCustomLogName") ?? "promMetrics";
+            }
+
             var identifier = Environment.GetEnvironmentVariable("MessageIdentifier") ?? "IoTEdgeMetrics";
             Console.WriteLine($"Using message identifier {identifier}");
 
             var messageFormatter = new MessageFormatter(configuration.MetricsFormat, identifier);
             var scraper = new Scraper(configuration.Endpoints.Values.ToList());
-            var metricsSync = new MetricsSync(messageFormatter, scraper, ioTHubModuleClient);
+            var metricsSync = new MetricsSync(messageFormatter, configuration.SyncMethod, scraper, ioTHubModuleClient, wId, wKey, clName);
 
             var scrapingInterval = TimeSpan.FromSeconds(configuration.ScrapeFrequencySecs);
             ScrapingTimer = new Timer(ScrapeAndSync, metricsSync, scrapingInterval, scrapingInterval);
