@@ -102,18 +102,19 @@ namespace MetricsCollector
             {
                 requestStreamAsync.Write(content, 0, content.Length);
             }
+
             using (HttpWebResponse responseAsync = (HttpWebResponse)request.GetResponse())
             {
-                if (responseAsync.StatusCode != HttpStatusCode.OK && responseAsync.StatusCode != HttpStatusCode.Accepted)
+
+                Console.WriteLine(((HttpWebResponse)responseAsync).StatusDescription);
+
+                // Get the stream containing content returned by the server.  
+                // The using block ensures the stream is automatically closed.
+                using (Stream dataStream = responseAsync.GetResponseStream())
                 {
-                    Stream responseStream = responseAsync.GetResponseStream();
-                    if (responseStream != null)
-                    {
-                        using (StreamReader streamReader = new StreamReader(responseStream))
-                        {
-                        throw new Exception(streamReader.ReadToEnd());
-                        }
-                    }
+                    StreamReader reader = new StreamReader(dataStream);
+                    string responseFromServer = reader.ReadToEnd();
+                    Console.WriteLine(responseFromServer);
                 }
             }
         }

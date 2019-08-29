@@ -59,9 +59,17 @@ namespace MetricsCollector
             string wKey = "";
             string clName = "";
             if (configuration.SyncMethod == SyncMethod.RestAPI) {
-                wId = Environment.GetEnvironmentVariable("AzMonWorkspaceId") ?? throw new Exception("AzMonWorkspaceId env var not set!");
-                wKey = Environment.GetEnvironmentVariable("AzMonWorkspaceKey") ?? throw new Exception("AzMonWorkspaceKey env var not set!");
-                clName = Environment.GetEnvironmentVariable("AzMonCustomLogName") ?? "promMetrics";
+                wId = Environment.GetEnvironmentVariable("AzMonWorkspaceId") ?? 
+                    Environment.GetEnvironmentVariable("azMonWorkspaceId") ?? // Workaround for IoT Edge k8s bug
+                    throw new Exception("AzMonWorkspaceId env var not set!");
+
+                wKey = Environment.GetEnvironmentVariable("AzMonWorkspaceKey") ?? 
+                    Environment.GetEnvironmentVariable("azMonWorkspaceKey") ?? 
+                    throw new Exception("AzMonWorkspaceKey env var not set!");
+
+                clName = Environment.GetEnvironmentVariable("AzMonCustomLogName") ?? 
+                    Environment.GetEnvironmentVariable("azMonCustomLogName") ??
+                    "promMetrics";
             }
 
             var identifier = Environment.GetEnvironmentVariable("MessageIdentifier") ?? "IoTEdgeMetrics";
