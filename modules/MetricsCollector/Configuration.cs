@@ -22,10 +22,14 @@ namespace MetricsCollector
         }
 
         public string SchemaVersion { get; }
+
         public IDictionary<string, string> Endpoints { get; }
+
         public int ScrapeFrequencySecs { get; }
+
         [JsonConverter(typeof(StringEnumConverter))]
         public MetricsFormat MetricsFormat { get; }
+
         [JsonConverter(typeof(StringEnumConverter))]
         public SyncTarget SyncTarget { get; }
 
@@ -41,6 +45,6 @@ namespace MetricsCollector
     public enum SyncTarget
     {
         IoTHub,
-        RestAPI
+        AzureLogAnalytics
     }
 }
