@@ -1,19 +1,24 @@
-using System.Collections.Generic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-
 namespace MetricsCollector
 {
+    using System.Collections.Generic;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
+
     public class Configuration
     {
         [JsonConstructor]
-        public Configuration(string schemaVersion, IDictionary<string, string> endpoints, int scrapeFrequencySecs, MetricsFormat metricsFormat, SyncMethod syncMethod)
+        public Configuration(
+            string schemaVersion,
+            IDictionary<string, string> endpoints, 
+            int scrapeFrequencySecs, 
+            MetricsFormat metricsFormat, 
+            SyncTarget syncTarget)
         {
             SchemaVersion = schemaVersion;
             Endpoints = endpoints;
             ScrapeFrequencySecs = scrapeFrequencySecs;
             MetricsFormat = metricsFormat;
-            SyncMethod = syncMethod;
+            SyncTarget = syncTarget;
         }
 
         public string SchemaVersion { get; }
@@ -22,7 +27,7 @@ namespace MetricsCollector
         [JsonConverter(typeof(StringEnumConverter))]
         public MetricsFormat MetricsFormat { get; }
         [JsonConverter(typeof(StringEnumConverter))]
-        public SyncMethod SyncMethod { get; }
+        public SyncTarget SyncTarget { get; }
 
         public override string ToString() => JsonConvert.SerializeObject(this);
     }
@@ -33,7 +38,7 @@ namespace MetricsCollector
         Json
     }
 
-    public enum SyncMethod
+    public enum SyncTarget
     {
         IoTHub,
         RestAPI
