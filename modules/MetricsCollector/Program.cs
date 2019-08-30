@@ -1,16 +1,14 @@
-using System;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Runtime.Loader;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Azure.Devices.Client;
-using Microsoft.Azure.Devices.Client.Transport.Mqtt;
-using Newtonsoft.Json;
-
 namespace MetricsCollector
 {
+    using System;
+    using System.Linq;
+    using System.Runtime.Loader;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Devices.Client;
+    using Microsoft.Azure.Devices.Client.Transport.Mqtt;
+    using Newtonsoft.Json;
+
     internal class Program
     {
         private static readonly Version ExpectedSchemaVersion = new Version("1.0");
@@ -33,7 +31,7 @@ namespace MetricsCollector
         public static Task WhenCancelled(CancellationToken cancellationToken)
         {
             var tcs = new TaskCompletionSource<bool>();
-            cancellationToken.Register(s => ((TaskCompletionSource<bool>) s).SetResult(true), tcs);
+            cancellationToken.Register(s => ((TaskCompletionSource<bool>)s).SetResult(true), tcs);
             return tcs.Task;
         }
 
@@ -44,7 +42,7 @@ namespace MetricsCollector
         private static async Task Init()
         {
             var mqttSetting = new MqttTransportSettings(TransportType.Mqtt_Tcp_Only);
-            ITransportSettings[] settings = {mqttSetting};
+            ITransportSettings[] settings = { mqttSetting };
 
             // Open a connection to the Edge runtime
             var ioTHubModuleClient = await ModuleClient.CreateFromEnvironmentAsync(settings);
@@ -58,16 +56,17 @@ namespace MetricsCollector
             string wId = "";
             string wKey = "";
             string clName = "";
-            if (configuration.SyncMethod == SyncMethod.RestAPI) {
-                wId = Environment.GetEnvironmentVariable("AzMonWorkspaceId") ?? 
+            if (configuration.SyncTarget == SyncTarget.RestAPI)
+            {
+                wId = Environment.GetEnvironmentVariable("AzMonWorkspaceId") ??
                     Environment.GetEnvironmentVariable("azMonWorkspaceId") ?? // Workaround for IoT Edge k8s bug
                     throw new Exception("AzMonWorkspaceId env var not set!");
 
-                wKey = Environment.GetEnvironmentVariable("AzMonWorkspaceKey") ?? 
-                    Environment.GetEnvironmentVariable("azMonWorkspaceKey") ?? 
+                wKey = Environment.GetEnvironmentVariable("AzMonWorkspaceKey") ??
+                    Environment.GetEnvironmentVariable("azMonWorkspaceKey") ??
                     throw new Exception("AzMonWorkspaceKey env var not set!");
 
-                clName = Environment.GetEnvironmentVariable("AzMonCustomLogName") ?? 
+                clName = Environment.GetEnvironmentVariable("AzMonCustomLogName") ??
                     Environment.GetEnvironmentVariable("azMonCustomLogName") ??
                     "promMetrics";
             }
@@ -77,7 +76,7 @@ namespace MetricsCollector
 
             var messageFormatter = new MessageFormatter(configuration.MetricsFormat, identifier);
             var scraper = new Scraper(configuration.Endpoints.Values.ToList());
-            var metricsSync = new MetricsSync(messageFormatter, configuration.SyncMethod, scraper, ioTHubModuleClient, wId, wKey, clName);
+            var metricsSync = new MetricsSync(messageFormatter, configuration.SyncTarget, scraper, ioTHubModuleClient, wId, wKey, clName);
 
             var scrapingInterval = TimeSpan.FromSeconds(configuration.ScrapeFrequencySecs);
             ScrapingTimer = new Timer(ScrapeAndSync, metricsSync, scrapingInterval, scrapingInterval);
@@ -87,7 +86,7 @@ namespace MetricsCollector
         {
             try
             {
-                var metricsSync = (MetricsSync) context;
+                var metricsSync = (MetricsSync)context;
                 await metricsSync.ScrapeAndSync();
             }
             catch (Exception e)

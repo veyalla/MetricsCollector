@@ -1,13 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-
 namespace MetricsCollector
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net;
+    using System.Net.Http;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+
     public class Scraper
     {
         const string UrlPattern = @"[^/:]+://(?<host>[^/:]+)(:[^:]+)?$";
@@ -44,14 +44,14 @@ namespace MetricsCollector
         public async Task<IEnumerable<string>> Scrape()
         {
             var metrics = new List<string>();
-                foreach(KeyValuePair<string, string> endpoint in this.endpoints)
-                {
-                    Console.WriteLine($"Scraping endpoint {endpoint.Key}");
-                    string metricsData = await this.ScrapeEndpoint(endpoint.Value);
-                    Console.WriteLine($"Got metrics from endpoint {endpoint}");
-                    metrics.Add(metricsData);
-                }
-                return metrics;
+            foreach (KeyValuePair<string, string> endpoint in this.endpoints)
+            {
+                Console.WriteLine($"Scraping endpoint {endpoint.Key}");
+                string metricsData = await this.ScrapeEndpoint(endpoint.Value);
+                Console.WriteLine($"Got metrics from endpoint {endpoint}");
+                metrics.Add(metricsData);
+            }
+            return metrics;
         }
 
         async Task<string> ScrapeEndpoint(string endpoint)
