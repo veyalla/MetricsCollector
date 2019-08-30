@@ -52,32 +52,34 @@ namespace MetricsCollector
             var configuration = await GetConfiguration(ioTHubModuleClient);
             Console.WriteLine($"Obtained configuration: {configuration}");
 
-
-            string wId = "";
-            string wKey = "";
-            string clName = "";
-            if (configuration.SyncTarget == SyncTarget.RestAPI)
-            {
-                wId = Environment.GetEnvironmentVariable("AzMonWorkspaceId") ??
-                    Environment.GetEnvironmentVariable("azMonWorkspaceId") ?? // Workaround for IoT Edge k8s bug
-                    throw new Exception("AzMonWorkspaceId env var not set!");
-
-                wKey = Environment.GetEnvironmentVariable("AzMonWorkspaceKey") ??
-                    Environment.GetEnvironmentVariable("azMonWorkspaceKey") ??
-                    throw new Exception("AzMonWorkspaceKey env var not set!");
-
-                clName = Environment.GetEnvironmentVariable("AzMonCustomLogName") ??
-                    Environment.GetEnvironmentVariable("azMonCustomLogName") ??
-                    "promMetrics";
-            }
-
             var identifier = Environment.GetEnvironmentVariable("MessageIdentifier") ?? "IoTEdgeMetrics";
             Console.WriteLine($"Using message identifier {identifier}");
 
             var messageFormatter = new MessageFormatter(configuration.MetricsFormat, identifier);
             var scraper = new Scraper(configuration.Endpoints.Values.ToList());
-            var metricsSync = new MetricsSync(messageFormatter, configuration.SyncTarget, scraper, ioTHubModuleClient, wId, wKey, clName);
 
+            IMetricsSync metricsSync;
+            if (configuration.SyncTarget == SyncTarget.AzureLogAnalytics)
+            {
+                string workspaceId = Environment.GetEnvironmentVariable("AzMonWorkspaceId") ??
+                    Environment.GetEnvironmentVariable("azMonWorkspaceId") ?? // Workaround for IoT Edge k8s bug
+                    throw new Exception("AzMonWorkspaceId env var not set!");
+
+                string wKey = Environment.GetEnvironmentVariable("AzMonWorkspaceKey") ??
+                    Environment.GetEnvironmentVariable("azMonWorkspaceKey") ??
+                    throw new Exception("AzMonWorkspaceKey env var not set!");
+
+                string clName = Environment.GetEnvironmentVariable("AzMonCustomLogName") ??
+                    Environment.GetEnvironmentVariable("azMonCustomLogName") ??
+                    "promMetrics";
+
+                metricsSync = new LogAnalyticsMetricsSync(messageFormatter, scraper, new AzureLogAnalytics(workspaceId, wKey, clName));
+            }
+            else
+            {
+                metricsSync = new IoTHubMetricsSync(messageFormatter, scraper, ioTHubModuleClient);
+            }
+            
             var scrapingInterval = TimeSpan.FromSeconds(configuration.ScrapeFrequencySecs);
             ScrapingTimer = new Timer(ScrapeAndSync, metricsSync, scrapingInterval, scrapingInterval);
         }
@@ -86,7 +88,7 @@ namespace MetricsCollector
         {
             try
             {
-                var metricsSync = (MetricsSync)context;
+                var metricsSync = (IMetricsSync)context;
                 await metricsSync.ScrapeAndSync();
             }
             catch (Exception e)
