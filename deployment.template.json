@@ -11,9 +11,9 @@
             "loggingOptions": "",
             "registryCredentials": {
               "edgetest": {
-                "username": "$CONTAINER_REGISTRY_USERNAME_edgetest",
-                "password": "$CONTAINER_REGISTRY_PASSWORD_edgetest",
-                "address": "edgetest.azurecr.io"
+                "username": "$CONTAINER_REGISTRY_USERNAME",
+                "password": "$CONTAINER_REGISTRY_PASSWORD",
+                "address": "$CONTAINER_REGISTRY"
               }
             }
           }
@@ -27,33 +27,28 @@
             }
           },
           "edgeHub": {
-            "type": "docker",
-            "status": "running",
-            "restartPolicy": "always",
             "settings": {
-              "image": "mcr.microsoft.com/azureiotedge-hub:1.0",
+              "image": "mcr.microsoft.com/azureiotedge-hub:1.0.9-rc2",
               "createOptions": {
-                "HostConfig": {
-                  "PortBindings": {
-                    "5671/tcp": [
-                      {
-                        "HostPort": "5671"
-                      }
-                    ],
-                    "8883/tcp": [
-                      {
-                        "HostPort": "8883"
-                      }
-                    ],
-                    "443/tcp": [
-                      {
-                        "HostPort": "443"
-                      }
-                    ]
-                  }
+                "User": "ContainerAdministrator",
+                "ExposedPorts": {
+                  "9600/tcp": {},
+                  "5671/tcp": {},
+                  "8883/tcp": {}
                 }
               }
-            }
+            },
+            "type": "docker",
+            "env": {
+              "experimentalfeatures__enabled": {
+                "value": true
+              },
+              "experimentalfeatures__enableMetrics": {
+                "value": true
+              }
+            },
+            "status": "running",
+            "restartPolicy": "always"
           }
         },
         "modules": {
@@ -65,6 +60,14 @@
             "settings": {
               "image": "${MODULES.MetricsCollector}",
               "createOptions": {}
+            },
+            "env": {
+              "AzMonWorkspaceId": {
+                "value": "$AZ_MON_ID"
+              },
+              "AzMonWorkspaceKey": {
+                "value": "$AZ_MON_KEY"
+              }
             }
           },
           "SimulatedTemperatureSensor": {
@@ -85,10 +88,21 @@
         "schemaVersion": "1.0",
         "routes": {
           "MetricsCollectorToIoTHub": "FROM /messages/modules/MetricsCollector/outputs/* INTO $upstream",
-          "sensorToMetricsCollector": "FROM /messages/modules/SimulatedTemperatureSensor/outputs/temperatureOutput INTO BrokeredEndpoint(\"/modules/MetricsCollector/inputs/input1\")"
+          "sensorToMetricsCollector": "FROM /messages/modules/SimulatedTemperatureSensor/outputs/temperatureOutput INTO $upstream"
         },
         "storeAndForwardConfiguration": {
           "timeToLiveSecs": 7200
+        }
+      }
+    },
+    "MetricsCollector": {
+      "properties.desired": {
+        "schemaVersion": "1.0",
+        "scrapeFrequencySecs": 300,
+        "metricsFormat": "Json",
+        "syncTarget": "AzureLogAnalytics",
+        "endpoints": {
+          "edgeHub": "http://edgeHub:9600/metrics"
         }
       }
     }

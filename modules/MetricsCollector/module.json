@@ -2,7 +2,7 @@
     "$schema-version": "0.0.1",
     "description": "",
     "image": {
-        "repository": "veyalla/metricscollector",
+        "repository": "$CONTAINER_REGISTRY/metricscollector",
         "tag": {
             "version": "0.0.2",
             "platforms": {
